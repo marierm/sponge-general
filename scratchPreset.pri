@@ -1,0 +1,2 @@
+( 'points': List[ [ 0, 0, 0, 0, 0, 0 ], [ 1, 1, 0, 0, 0, 0 ] ], 'colors': List[ Color(0.7, 0.35, 0.35), Color(0.7, 0.54764705882353, 0.35) ], 'cursorPos': [ 0.5, 0.5, 0.0, 0.0, 0.0, 0.0 ], 'presets': [ ( 'name': "Preset", 'parameters': [  ] ), ( 'name': "Preset", 'parameters': [  ] ) ], 
+  'cursor': ( 'name': "Cursor", 'parameters': [  ] ) )

@@ -1,0 +1,1 @@
+{SinOsc.ar([60, 62, 64, 65].midicps, 0, 1)}.play;

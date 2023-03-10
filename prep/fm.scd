@@ -1,0 +1,109 @@
+// withLists
+// -> withSponge
+//  -> withInterpolator
+//   -> withAmp
+//    -> withDamp
+//     -> withPitch
+//      -> fm
+
+PR(\withChordsFm).clone({ 					// fm
+	~outBus = 4;
+	~prepList = ~prepList.deepCopy.addFunc({
+		"prep/looper.scd".loadRelative;
+		SynthDef(\fm, {
+			arg out = 0, gate=1, att=0.3, outToLooper=100;
+			var ctls, mods, sig, in;
+			ctls = Array.fill(6, {|i|
+				[
+					(\freq++i).asSymbol.kr(220),
+					0,
+					(\amp++i).asSymbol.kr(1)
+				]
+			});
+			mods = Array.fill2D(6, 6, {|x,y|
+				var name;
+				name = ("mod" ++ x ++ "_" ++ y).asSymbol;
+				NamedControl.kr(name, 0);
+			});
+			sig = FM7.ar(ctls, mods);
+			sig = sig * \amps.kr( 0.1!6 );
+			sig = Splay.arFill( ~numNotes, { |i|
+				sig[i] * EnvGen.kr(
+					Env.asr(att,0.1),gate, doneAction:2
+				)
+			});
+
+			Out.ar(	out, sig );
+			Out.ar( outToLooper, sig);
+		}).add;
+
+		~bus = Bus.audio(s, 2);
+		~looperBus = Bus.audio(s, 2);
+		~fmId = 20;
+		~looperXfade = 1.0;
+		~myLooper = ~looper.new(~looperBus, ~fmId, ~outBus, 2, ~looperXfade);
+	});
+
+	~asPatternList = ~asPatternList.deepCopy.addFunc({
+		//Make sure everything is clean.
+		~fm.isPlaying.if({
+			~fm.free;
+			~pitcher.free;
+		});
+
+		~server.makeBundle(nil,{
+
+			~fm = Synth.after(~pitcher, \fm, [
+				// \out, ~bus.index,
+				\out, ~outBus,
+				\outToLooper, ~looperBus
+				// \amp, 0.1
+			]);
+
+			~fm.map( \amps, ~ampBus);
+			
+			// Map output of pitcher to fm freqs.
+			~fm.map( *
+				~notes.size.collect({|i|
+					[ (\freq ++ i).asSymbol, ~freqBuses.subBus(i) ]
+				}).flat;
+			);
+
+			// Map interpolator amps to fm amps
+			~fm.map( *
+				~interpolator.cursor.parameters.select({|i|
+					i.name.beginsWith("amp");
+				}).collect({|param|
+					[param.name.asSymbol, param.bus]
+				}).flat;
+			);
+
+			// Map interpolator mods to fm mods
+			~fm.map( *
+				~interpolator.cursor.parameters.select({|i|
+					i.name.beginsWith("mod");
+				}).collect({ |param|
+					[param.name.asSymbol, param.bus]
+				}).flat;
+			);
+
+			~pitcher.map( *
+				~notes.size.collect({|i|
+					[~interpolId + i , ~interpolator.cursor.parameters[i*2].bus]
+				}).flat;			
+			);
+			NodeWatcher.register(~fm);
+		});
+		1.asPattern;
+	});
+
+	~stopCleanupList = ~stopCleanupList.deepCopy.addFunc({
+		~fm.isPlaying.if({
+			~fm.release(~relTime);
+		});
+	});
+
+	~freeCleanupList = ~freeCleanupList.deepCopy.addFunc({
+		~bus.free;
+	});
+}).chuck(PR(\fm));

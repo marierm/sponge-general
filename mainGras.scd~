@@ -1,0 +1,29 @@
+// Make sure Leap motion daemon is started.
+// Required quarks:
+// dewdrop_lib, wslib
+// 2. Execute this section.
+(
+forkIfNeeded {
+	s.sync;
+	"./prep/03-grasNullateur.scd".loadRelative; // creates ~gras
+	s.sync;
+	"./prep/04-liveRecording.scd".loadRelative; // live recording mechanism (gui).
+	"./prep/cGranGui.scd".loadRelative; // Granulator gui.
+	~gras.play;
+	defer {
+		~gui = ~cGranGui.value(~gras);
+		~gui.front;
+	};
+}
+)
+
+
+
+// Cleanup.
+(
+~gras.free;
+~lc.free;
+~guig.window.close;
+~recBufs.do(_.free);
+~guis.do({|i| i.window.close});
+)

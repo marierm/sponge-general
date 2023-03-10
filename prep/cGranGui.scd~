@@ -1,0 +1,58 @@
+~cGranGui = { |grasNullateur|
+	var window, sliders, names, numbers;
+	var params, synth;
+	var front;
+
+	synth = grasNullateur.granSynth;
+	params = [
+		[granFreq: [1,100, \exp].asSpec],
+		[granDur: [0.01, 1, \exp].asSpec],
+		[rate: [0.125,8.0,\exp].asSpec],
+		[pos: [0,1].asSpec],
+		[panW: [0.2,3].asSpec],
+		[panC: \pan.asSpec],
+		[amp: \amp.asSpec],
+		[env: [-1, 104, \linear, 1].asSpec],
+	];
+	window = Window("gras nullateur", 300@(params.size * 30));
+	numbers = params.collect({|i|
+		var text;
+		text = StaticText(window, 40@25);
+		text.string_("0.0");
+	});
+	names = params.collect({|i|
+		var text;
+		text = StaticText(window, 60@25);
+		text.align_(\right);
+		text.string_(i[0].asString);
+	});
+	sliders = params.collect({ |i|
+		var sl;
+		sl = Slider(window, 280@25);
+		sl.action_({|s|
+			// i[0].post; " ".post; i[1].map(s.value).postln;
+			numbers.string_( i[1].map(s.value).asString; );
+			synth.set(i[0], i[1].map(s.value) );
+		});
+	});
+	window.layout_(
+		HLayout(
+			VLayout(*names),
+			VLayout(*sliders),
+			VLayout(*numbers)
+		)
+	);
+
+	front = {
+		defer {
+			window.front;
+		}
+	};
+	(
+		window: { window },
+		front: { front.value },
+		params: { params },
+		synth: { synth },
+		sliders: { sliders }
+	)
+};

@@ -1,0 +1,113 @@
+(
+~granulator = Proto({
+	~numChan = 2; // Set to number of speakers.
+	~envelopeSize = 2048;
+	~group = ParGroup.tail(Server.default);
+	~initialize =  { |name='left'|
+		~name = name; // ~granulators have a name.  This is useful to
+					 // dispatch update messages.
+		// A bunch of different envelopes to choose from.
+		~envs = [
+			// 20 perc envelopes.
+			Array.geom(20, 0.001, 0.001.reciprocal.pow(1/20)).collect({ |i|
+				Env.perc(i, 1-i).asSignal(~envelopeSize);
+			}),
+			// 20 reverse perc envelopes.
+			Array.geom(20, 0.001, 0.001.reciprocal.pow(1/20)).collect({ |i|
+				Env.perc(1-i, i, 1, 4).asSignal(~envelopeSize);
+			}),
+			// 20 sine envelopes (with flat section of varying length in middle).
+			Array.series(40, 0.04, 0.02).collect({ |i|
+				Env([0,1,0], [i, 1-i],'sine').asSignal(~envelopeSize);
+			}),
+			// 25 sine envelopes (with flat section of varying length in middle).
+			// Last one is a hanning enveloppe.
+			Array.series(25, 0.01, 0.02).collect({ |i|
+				Env([0,1,1,0], [i, 1 - (i * 2), i],'sine').asSignal(~envelopeSize);
+			})
+		].flatten;
+		
+		~envBufs = ~envs.collect({ |env|
+				Buffer.alloc(Server.default, ~envelopeSize);
+		});
+
+		~envs.do({|env, i|
+			~envBufs[i].setn(0, env)
+		});
+
+		// Load test samples in buffers.
+		~fileNames = List[];
+		~buffers = "../media/*.wav".resolveRelative.pathMatch.collect({ |path|
+			~fileNames.add(path.basename); // Keep file names in ~fileNames.
+			Buffer.read(Server.default, path);
+		});
+
+		~buf = ~buffers[0];
+
+		SynthDef(\grasNullateur, {
+			arg granFreq=8, out=0, granDur=0.2, bufnum=0, rate=1,
+			pos=0.5, panW=0.0, panC=0.0, amp=0.1, env= -1, gate=1;
+			
+			var trig, sig, pan, envelope;
+			envelope = EnvGen.kr(Env.asr(0.01,1,0.1), gate, doneAction:2);
+			trig = Impulse.ar(granFreq);
+			pan = TRand.ar( // Center and Width of pan
+				lo: (panC - panW).clip(-1.0, 1.0),
+				hi: (panC + panW).clip(-1.0, 1.0),
+				trig: trig
+			);
+			sig = GrainBuf.ar(
+				numChannels: 2,
+				trigger: trig,
+				dur: granDur,
+				sndbuf: bufnum,
+				rate: rate,
+				pos: pos,
+				interp: 2,
+				pan: pan,
+				envbufnum: env,
+				rate: rate,
+				maxGrains: 512,
+				mul: amp,
+				add: 0
+			);
+			Out.ar(out,	sig * envelope)
+		}).add;
+		currentEnvironment;
+	};
+
+	~play = {
+		~granSynth = Synth.tail(~group, \grasNullateur, [
+			\bufnum, ~buf
+		]);
+	};
+
+	~stop = {
+		~granSynth.release;
+	};
+
+	~update = { arg envir, what ... args;	// respond to a change in a model (MVC)
+		forkIfNeeded {
+			Server.default.sync;
+			args.postln;
+			what.switch(
+				\setBuffer, {
+					var buf, name;
+					#buf, name  = args;
+					(name == ~name).if({
+						~buf = buf;
+						~granSynth.set(\bufnum, ~buf );
+					});
+				}
+			)
+		}
+	};
+
+	~free = {
+		~stop.value;
+		~envBufs.do(_.free);
+	};
+});
+~gras = ~granulator.new('gras');
+// ~grR = ~granulator.new('right');
+)

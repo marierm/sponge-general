@@ -1,0 +1,99 @@
+#+OPTIONS: ':nil *:t -:t ::t <:t H:3 \n:nil ^:t arch:headline
+#+OPTIONS: author:t broken-links:nil c:nil creator:nil
+#+OPTIONS: d:(not "LOGBOOK") date:t e:t email:nil f:t inline:t num:t
+#+OPTIONS: p:nil pri:nil prop:nil stat:t tags:t tasks:t tex:t
+#+OPTIONS: timestamp:t title:t toc:nil todo:t |:t
+#+TITLE: Instructions pour utiliser l'éponge.
+#+DATE: 
+#+AUTHOR: Martin Marier
+#+EMAIL: martin@martinmarier.com
+#+LANGUAGE: fr
+#+SELECT_TAGS: export
+#+EXCLUDE_TAGS: noexport
+#+CREATOR: Emacs 25.3.1 (Org mode 9.1)
+
+* Installer SuperCollider et les plugins
+  La version la plus récente de SC est disponible ici:
+  http://supercollider.github.io/download Nous utilisons actuellement la
+  version 3.8.0.
+
+  Les plugins sont disponibles ici:
+  https://github.com/supercollider/sc3-plugins/releases Nous utilisons
+  actuellement la version 3.8.0.
+
+  Une fois l'archive ZIP dépaquetée, le dossier =SC3plugins= et tout
+  son contenu doit être placé dans ce dossier (sur Mac):
+
+  =/Users/yourUserName/Library/Application Support/SuperCollider/Extensions=
+
+  Créez le dossier =Extensions= au besoin.
+
+  Pour connaître le dossier dans lequel vous devez déposer les
+  =SC3plugins= sur une autre plateforme (Windows ou Linux), démarrez
+  SuperCollider et cliquez sur l'item /Open user support directory/ du
+  menu /File/.
+
+* Installer tous les Quarks nécessaires
+  La liste des quarks nécessaires est dans le fichier
+  =scCode/installation.scd=
+
+  Vous devez ouvrir ce document avec SuperCollider et exécuter le bloc de code
+  qui est entre parenthèses.
+
+  Pour exécuter le bloc, placez le curseur sur la première parenthèse et
+  appuyez sur Command+Enter (ou Ctrl+Enter).
+
+* Installer les mmExtensions
+  Téléchargez les mmExtensions ici: https://github.com/marierm/mmExtensions
+
+  Le fichier ZIP doit être dépaqueté dans ce dossier (sur mac):
+
+  =/Users/yourUserName/Library/Application Support/SuperCollider/Extensions=
+
+  Créez le dossier =Extensions= au besoin.
+
+* Configurer l'éponge
+  Lors de sa mise sous tension, l'éponge tente de se connecter au
+  dernier point d'accès WiFi (un routeur sans fil) auquel elle s'est
+  connectée.
+
+  Si ce point d'accès n'est pas disponible, l'éponge devient elle-même
+  un point d'accès dont le nom est =wifi101-XXXX=, où =XXXX=
+  représente les quatre derniers caractères de l'adresse MAC de
+  l'éponge.  L'adresse MAC -- unique pour chaque appareil pouvant se
+  connecter à un résea WiFi -- est imprimée sur le module WiFi de
+  l'éponge.
+
+  Il faudra alors se connecter à ce réseau Wifi et, de là, accéder à
+  la page web servie par l'éponge à l'adresse http://192.168.1.1 .
+  Sur cette page, entrez le nom de votre point d'accès et le mot de
+  passe correspondant.  L'éponge se connectera alors automatiquement
+  au point d'accès que vous avez entré.  (À partir de ce moment, la
+  page http://192.168.1.1 n'est plus accessible.  Il est donc normal
+  que le navigateur utilisé affiche un message d'erreur.)
+
+* Démarrer l'éponge en mode solo
+  Ouvrez le fichier scCode/solo.scd dans SuperCollider et exécuter le bloc de code
+  qui est entre parenthèses.
+
+  Pour exécuter le bloc, placez le curseur sur la première parenthèse
+  et appuyez sur Command+Enter (ou Ctrl+Enter).
+
+  L'éponge est prête quand le message =sponge_solo ready.= apparaît dans la fenêtre
+  =Post= de SuperCollider.
+
+* Messages OSC
+  (Vous n'avez pas besoin de comprendre tout ça.)
+
+  L'éponge envoie des messages OSC en /multicast/ à l'adresse
+  =224.0.0.1= sur le port 50501, à partir du port 50502.  Un seul
+  message est envoyé à chaque 20 millisecondes.  L'adresse est
+  =/sponge=.  Elle est suivie de neuf paramètres (tous des entiers):
+  =acc1x=, =acc1y=, =acc1z=, =acc2x=, =acc2y=, =acc2z=, =fsr1=,
+  =fsr2=, =buttons= .
+
+  Les accéléromètres ont des valeurs 16 bits signées, les fsr ont des
+  valeurs 12 bits non signées, et les boutons sont représentés par les
+  10 bits les moins significatifs d'un entier à 32 bits.
+
+  

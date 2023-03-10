@@ -1,0 +1,55 @@
+PR(\withDamp).clone({
+	~audioFilePath = "../samples/05-feu.wav".resolveRelative;
+	~out = 0;
+	~prepList = ~prepList.deepCopy.addFunc({
+		SynthDef(\player, {|out=0, bufnum=0, rate=1, trig=1, sPos=0, lp=1, amp=1.0, gate=1.0|
+			Out.ar(
+				out,
+				PlayBuf.ar(
+					numChannels: 2,
+					bufnum: bufnum,
+					rate: rate,
+					trigger: trig,
+					startPos: sPos,
+					loop: lp
+				) * EnvGen.kr(
+					envelope: Env.asr(0.1,1.0, 1.0),
+					gate: gate,
+					levelScale: amp,
+					doneAction: 2
+				);
+			);
+		}).add;
+
+		~buf = Buffer.read(Server.default, ~audioFilePath);
+
+		~envBuf = Buffer.sendCollection(Server.default, Env.perc().asSignal(4096));
+
+		~bus = Bus.audio(Server.default, 2);
+		~group = ParGroup();
+	});
+
+	~asPatternList = ~asPatternList.deepCopy.addFunc({
+		~feu = Synth.tail(~group, \player, [
+			\out, ~out,
+			\bufnum, ~buf.bufnum,
+			\sPos, 0
+		]);
+
+		1.asPattern;
+	});
+
+	~stopCleanupList = ~stopCleanupList.deepCopy.addFunc({
+		{
+			~feu.free;
+		}.try;
+	});
+
+	~freeCleanupList = ~freeCleanupList.deepCopy.addFunc({
+		~bus.free;
+		~group.free;
+		~buf.free;
+	});
+
+}).chuck(PR(\feu));
+

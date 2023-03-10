@@ -1,0 +1,68 @@
+PR(\withDamp).clone({
+	~out = 0;
+	
+	~prepList = ~prepList.deepCopy.addFunc({
+		SynthDef(\manualPops, {
+			|out=0, dust=0, amp=1.0, rq=0.35, delRange=0.0013, fltMin=100, fltMax=8000|
+			// Dust.ar(density:density);
+			dust = DelayN.ar(dust, 0.2, [0, WhiteNoise.kr().range(0, delRange)], amp);
+			// dust = BPF.ar(dust, WhiteNoise.kr().range(fltMin,fltMax), rq );
+			dust = BPF.ar(PinkNoise.ar(Decay.ar(dust,0.001)), WhiteNoise.kr().range(80,4000));
+			dust = GVerb.ar(
+				in:dust,
+				roomsize:50,
+				revtime:0.5,
+				damping: 0.5,
+				inputbw: 0.5,
+				spread: 100,
+				drylevel: 1,
+				earlyreflevel: 0.005,
+				taillevel:0.1
+			);
+			Out.ar( out, dust );
+		}).add;
+
+		~indexBus = Bus.control();
+
+		{
+			~sponge.activateFeature(\acc1xHP);
+			Server.default.sync;
+			~sponge.activateFeature(\acc1xTrig);
+			// 8, // thresh
+			// 2.0833333333333e-05, // 1/48000  dur
+			// 0.001 // scale
+
+		}.fork;
+	});
+
+	~asPatternList = ~asPatternList.deepCopy.addFunc({
+		~manualPops = Synth.tail(~group, \manualPops, [
+			\out, ~out,
+		]);
+
+		~manualPops.map(
+			\dust, ~sponge[\acc1xTrig].bus,
+			// \dur, ~interpolator.cursor.parameters[0].bus,
+			// \rate, ~interpolator.cursor.parameters[1].bus,
+			// \pos, ~indexBus
+		);
+
+		1.asPattern;
+	});
+
+	~stopCleanupList = ~stopCleanupList.deepCopy.addFunc({
+		{
+			~manualPops.free;
+		}.try;
+	});
+
+	~freeCleanupList = ~freeCleanupList.deepCopy.addFunc({
+		~bus.free;
+		~group.free;
+		~buf.free;
+		~envBuf.free;
+		~indicesBuf.free;	
+		~indexBus.free;
+	});
+
+}).chuck(PR(\popper));

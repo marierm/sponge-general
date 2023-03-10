@@ -1,0 +1,29 @@
+(
+SynthDef(\lampPostEraser, {
+	|out=0, freq=50, amp=0.1, gate=1, scale=1|
+	Out.ar(out,
+		LeakDC.ar(
+			VarSaw.ar(
+				LFDNoise3.kr(2,0.03, 1.0) * [freq,freq*1.02],
+				0,
+				LFDNoise3.kr(1, LFDNoise3.kr(1).range(0,0.3) ), //width
+				EnvGen.kr(Env.adsr(0.02, 0.15, 0.02, 5, 10, -2), gate, scale, doneAction:2),
+				1).wrap(-0.65,0.2);
+		) * amp;
+	);
+}).add();
+)
+
+(
+var num = 1;
+var baseFreq = 40;
+x = Array.fill(num , { |i| Synth.tail(s, \lampPostEraser, [\freq, baseFreq + (baseFreq*i), \amp, (i+1)/(num+i)]); });
+)
+
+x.do(_.release(2.5));
+
+s.scope(2);
+
+(instrument: \lampPostEraser, freq: 40, scale: 0.8, dur: 3, amp:1,).play;
+
+

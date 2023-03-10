@@ -1,0 +1,25 @@
+#+OPTIONS: ':nil *:t -:t ::t <:t H:3 \n:nil ^:t arch:headline
+#+OPTIONS: author:t broken-links:nil c:nil creator:nil
+#+OPTIONS: d:(not "LOGBOOK") date:t e:t email:nil f:t inline:t num:t
+#+OPTIONS: p:nil pri:nil prop:nil stat:t tags:t tasks:t tex:t
+#+OPTIONS: timestamp:t title:t toc:nil todo:t |:t
+#+TITLE: Instructions pour utiliser l'éponge.
+#+DATE: <2017-09-25 Mon>
+#+AUTHOR: Martin Marier
+#+EMAIL: martin@martinmarier.com
+#+LANGUAGE: fr
+#+SELECT_TAGS: export
+#+EXCLUDE_TAGS: noexport
+#+CREATOR: Emacs 25.3.1 (Org mode 9.1)
+
+* Installer SuperCollider et les plugins
+  La version la plus récente de SC est disponible ici:
+  http://supercollider.github.io/download
+  Nous utilisons actuellement la version 3.8.0.
+
+  Les plugins sont disponibles ici:
+  https://github.com/supercollider/sc3-plugins/releases
+  Nous utilisons actuellement la version 3.8.0.
+
+* Installer les Quarks nécessaires
+  

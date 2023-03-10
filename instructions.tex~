@@ -1,0 +1,120 @@
+% Created 2017-10-09 Mon 15:59
+% Intended LaTeX compiler: pdflatex
+\documentclass[11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{graphicx}
+\usepackage{grffile}
+\usepackage{longtable}
+\usepackage{wrapfig}
+\usepackage{rotating}
+\usepackage[normalem]{ulem}
+\usepackage{amsmath}
+\usepackage{textcomp}
+\usepackage{amssymb}
+\usepackage{capt-of}
+\usepackage{hyperref}
+\author{Martin Marier}
+\date{}
+\title{Instructions pour utiliser l'éponge.}
+\hypersetup{
+ pdfauthor={Martin Marier},
+ pdftitle={Instructions pour utiliser l'éponge.},
+ pdfkeywords={},
+ pdfsubject={},
+ pdfcreator={Emacs 25.3.1 (Org mode 9.1)}, 
+ pdflang={Frenchb}}
+\begin{document}
+
+\maketitle
+
+\section{Installer SuperCollider et les plugins}
+\label{sec:org5b1ad39}
+La version la plus récente de SC est disponible ici:
+\url{http://supercollider.github.io/download} Nous utilisons actuellement la
+version 3.8.0.
+
+Les plugins sont disponibles ici:
+\url{https://github.com/supercollider/sc3-plugins/releases} Nous utilisons
+actuellement la version 3.8.0.
+
+Une fois l'archive ZIP dépaquetée, le dossier \texttt{SC3plugins} et tout
+son contenu doit être placé dans ce dossier (sur Mac):
+
+\texttt{/Users/yourUserName/Library/Application Support/SuperCollider/Extensions}
+
+Créez le dossier \texttt{Extensions} au besoin.
+
+Pour connaître le dossier dans lequel vous devez déposer les
+\texttt{SC3plugins} sur une autre plateforme (Windows ou Linux), démarrez
+SuperCollider et cliquez sur l'item \emph{Open user support directory} du
+menu \emph{File}.
+
+\section{Installer tous les Quarks nécessaires}
+\label{sec:orge0c671a}
+La liste des quarks nécessaires est dans le fichier
+\texttt{scCode/installation.scd}
+
+Vous devez ouvrir ce document avec SuperCollider et exécuter le bloc de code
+qui est entre parenthèses.
+
+Pour exécuter le bloc, placez le curseur sur la première parenthèse et
+appuyez sur Command+Enter (ou Ctrl+Enter).
+
+\section{Installer les mmExtensions}
+\label{sec:orga640532}
+Téléchargez les mmExtensions ici: \url{https://github.com/marierm/mmExtensions}
+
+Le fichier ZIP doit être dépaqueté dans ce dossier (sur mac):
+
+\texttt{/Users/yourUserName/Library/Application Support/SuperCollider/Extensions}
+
+Créez le dossier \texttt{Extensions} au besoin.
+
+\section{Configurer l'éponge}
+\label{sec:org7927f14}
+Lors de sa mise sous tension, l'éponge tente de se connecter au
+dernier point d'accès WiFi (un routeur sans fil) auquel elle s'est
+connectée.
+
+Si ce point d'accès n'est pas disponible, l'éponge devient elle-même
+un point d'accès dont le nom est \texttt{wifi101-XXXX}, où \texttt{XXXX}
+représente les quatre derniers caractères de l'adresse MAC de
+l'éponge.  L'adresse MAC -- unique pour chaque appareil pouvant se
+connecter à un résea WiFi -- est imprimée sur le module WiFi de
+l'éponge.
+
+Il faudra alors se connecter à ce réseau Wifi et, de là, accéder à
+la page web servie par l'éponge à l'adresse \url{http://192.168.1.1} .
+Sur cette page, entrez le nom de votre point d'accès et le mot de
+passe correspondant.  L'éponge se connectera alors automatiquement
+au point d'accès que vous avez entré.  (À partir de ce moment, la
+page \url{http://192.168.1.1} n'est plus accessible.  Il est donc normal
+que le navigateur utilisé affiche un message d'erreur.)
+
+\section{Démarrer l'éponge en mode solo}
+\label{sec:orge665a6d}
+Ouvrez le fichier scCode/solo.scd dans SuperCollider et exécuter le bloc de code
+qui est entre parenthèses.
+
+Pour exécuter le bloc, placez le curseur sur la première parenthèse
+et appuyez sur Command+Enter (ou Ctrl+Enter).
+
+L'éponge est prête quand le message \texttt{sponge\_solo ready.} apparaît dans la fenêtre
+\texttt{Post} de SuperCollider.
+
+\section{Messages OSC}
+\label{sec:orgb57ce4e}
+(Vous n'avez pas besoin de comprendre tout ça.)
+
+L'éponge envoie des messages OSC en \emph{multicast} à l'adresse
+\texttt{224.0.0.1} sur le port 50501, à partir du port 50502.  Un seul
+message est envoyé à chaque 20 millisecondes.  L'adresse est
+\texttt{/sponge}.  Elle est suivie de neuf paramètres (tous des entiers):
+\texttt{acc1x}, \texttt{acc1y}, \texttt{acc1z}, \texttt{acc2x}, \texttt{acc2y}, \texttt{acc2z}, \texttt{fsr1},
+\texttt{fsr2}, \texttt{buttons} .
+
+Les accéléromètres ont des valeurs 16 bits signées, les fsr ont des
+valeurs 12 bits non signées, et les boutons sont représentés par les
+10 bits les moins significatifs d'un entier à 32 bits.
+\end{document}

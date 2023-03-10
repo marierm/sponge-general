@@ -1,0 +1,6 @@
+(
+freezeMe: {
+	numInterpolatorDim.do({ |i| interpolator.disconnect(i);	});
+	frozen = true;
+};
+)

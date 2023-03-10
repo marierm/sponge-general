@@ -1,0 +1,363 @@
+~looper = Proto({
+	~server = Server.default;
+	forkIfNeeded {
+		SynthDef(\loopPlayer, {
+			arg out=0, bufnum=0, atk=5, rel=6, amp=1, gate=0, rate=1.0, in=0;
+			var sig, env;
+			in = In.kr(in, 1);
+			env = EnvGen.kr(Env.asr(atk,1,rel, curve:\sqr), gate, amp * in);
+			sig = PlayBufCF.ar(
+				1,
+				bufnum,
+				BufRateScale.kr(bufnum) * rate,
+				trigger: LFPulse.kr(((BufDur.kr(bufnum)/rate) - 10.0).reciprocal),
+				lag: 8);
+			Out.ar(Pan2.ar(out,0),sig * env);
+		}).add;
+
+		~bus = Bus.audio(s, 2);
+		SynthDef(\record, {
+			arg in=0, buf=0, t_trig, id=0;
+			var phasor;
+			phasor = Phasor.ar(0, 1, 0, BufFrames.kr(buf));
+			BufWr.ar(
+				SoundIn.ar(in),
+				bufnum: buf,
+				phase: phasor
+			);
+			SendTrig.kr(t_trig, id, phasor);
+		}).add;
+		
+		SynthDef(\centerPosScaler, {
+			arg input=1.0, out=0, mul=1.0;
+			Out.kr(out, input * mul );
+		}).add;
+		~server.sync;
+		// Always recording, looping over ~liveRecMaxLen samples.
+		~recorder = ~liveRecBufNumChan.collect({ |i|
+			Synth.head(Server.default, \record, [
+				\buf, ~liveRecBuf[i],
+				\in, i,
+				\id, i
+			]);
+		});
+		~server.sync;
+	};
+	~initialize = {
+		forkIfNeeded {
+			~numChan = 2;
+			~outBus = 0;
+			~glitchBuffers = ~glitchPaths.collect({ |i|
+				Buffer.read(~server, i);
+			});
+			~droneBuffers = ~dronePaths.collect({ |i|
+				Buffer.read(~server, i);
+			});
+			// ~rawBuses = ~numSensors.collect({ Bus.control(~server, 1) });
+			// ~calBuses = ~numSensors.collect({ Bus.control(~server, 1) });
+			// ~sensorSpecs = ~numSensors.collect({ ControlSpec(); });
+			// ~oscRaw = OSCFunc({|msg|
+			// 	msg[1..~numSensors].do({|i, j|
+			// 		~rawBuses[j].set(~sensorSpecs[j].unmap(i));
+			// 	});
+			// }.inEnvir, "/raw", NetAddr(~towerIP, 50202), 50101);
+			~oscTouch = OSCFunc({ arg msg;
+				var vals, pads, sustain;
+				vals = (msg[1] & 0xFFF).asBinaryDigits(12).reverse;
+				sustain = 0;
+				(vals != ~touched).if({
+					vals.do({
+						arg status, number;
+						status.asBoolean.if({
+							~play.value(number);
+						},{
+							(~touched[number] !=  vals[number]).if({
+								~stop.value(number);
+							});
+						});
+					});
+					sustain.asBoolean.if({
+						vals.do({
+							arg status, number;
+							status.asBoolean.if({
+								~sustainFlags[number] = true;
+							});
+						});
+					});
+					~touched = vals;
+				});
+			}.inEnvir, "/touch");
+			~drones = ~droneBuffers.collect({
+				arg buffer, number;
+				Synth.head(~server, \towerLooper,[
+					\out, ~outBus,
+					\bufnum, buffer,
+					\atk, 0.001,
+					\rel, 0.01,
+					\amp, 0.2,
+					\rate, 2.pow(2),
+					// \in, ~rawBuses[number]
+				]);
+			});
+			~glitches = ~glitchBuffers.collect({
+				arg buffer, number;
+				Synth.head(~server, \towerLooper,[
+					\out, ~outBus,
+					\bufnum,  buffer,
+					\atk, 0.001,
+					\rel, 0.01,
+					\amp, 0.2
+				]);
+			});
+		};
+		currentEnvironment;
+	};
+
+	~currentBuf = 0;
+	~numLiveRecBuf = 5;
+	~sr = Server.default.sampleRate;
+	~liveRecMaxLen = ~sr * 30.0; // seconds to samples.
+	~preRecLength = ~sr * 4.0; // seconds to samples.
+	~liveRecBufNumChan = 2;
+	~destBuf = 0;
+	// Live buffers lengths in seconds.
+	~liveBuffersLengths = Array.fill(~numLiveRecBuf, { 1.0 });
+	~prevBuf = { ~setBuf.value(~currentBuf - 1); };
+	~nextBuf = { ~setBuf.value(~currentBuf + 1); };
+	~setBuf = { |number|
+		~currentBuf = number % ~numBuffers;
+		"Switching to recording ".post;
+		~currentBuf.postln;
+		// ~allBuffers[~currentBuf][0].path.postln;
+		~granulotron.isPlaying.if({
+			~liveRecBufNumChan.do({|i|
+				~granulotron.set(
+					[\bufL, \bufR][i],
+					~allBuffers[~currentBuf][i]
+				);
+			});
+		});
+		~centerPosSynth.isPlaying.if({
+			"pos mul  is ".post;
+			~liveBuffersLengths[~currentBuf].postln;
+			~centerPosSynth.set(
+				\mul,
+				~liveBuffersLengths[~currentBuf]
+			);
+		});
+	};
+	
+	// Copy last ~preRecLength seconds in a buffer. 
+	~copyLiveRecBuf = { |liveRecBufNum=0|
+		"Copying liveRecBuf to buffer ".post;
+		liveRecBufNum.postln;
+		~destBuf = liveRecBufNum.asInteger;
+		// ~preRecLength = len * ~sr;
+		~recorder[0].set(\id, 0, \t_trig, 1.0);
+	};
+
+	~startRecBuf = { |liveRecBufNum=0|
+		// Really choose buffer when stopping.
+		// Use this buffer if we overflow.
+		~destBuf = liveRecBufNum.asInteger;
+		// ~preRecLength = len * ~sr;
+		~recorder[0].set(\id, 1, \t_trig, 1.0);
+	};
+
+	~stopRecBuf = { |liveRecBufNum=0|
+		~destBuf = liveRecBufNum.asInteger;
+		~recorder[0].set(\id, 2, \t_trig, 1.0);
+	};
+
+	~oscFunc = OSCFunc({ |msg|
+		var bufPos, id;
+		bufPos = msg[3];
+		id = msg[2];
+		~liveRecBufNumChan.do({|i|
+			id.switch(
+				0, { // use preRec
+					~liveBuffersLengths[~destBuf] = (~preRecLength / ~sr);
+					"Copying buffer ".post;
+					~liveRecBuf[i].bufnum.post;
+					" to buffer ".post;
+					~liveBuffers[~destBuf][i].bufnum.postln;
+					"Length: ".post;
+					~liveBuffersLengths[~destBuf].post;
+					" seconds.".postln;
+					~liveRecBuf[i].copyLoopTo(
+						buf: ~liveBuffers[~destBuf.asInteger][i],
+						dstStartAt: 0,
+						srcStartAt: (bufPos - ~preRecLength),
+						numSamples: ~preRecLength
+					);
+				},
+				1, { // Start recording buffer.
+					"Recording started for buffer ".post;
+					~liveBuffers[~destBuf][i].bufnum.postln;
+					"LiveRecBuf position was: ".post;
+					~startRecPos = bufPos;
+					~startRecPos.postln;
+				},
+				2, { // Stop recording buffer.  (Copy LiveRecBuf to another Buffer.)
+					var len;
+					len = (bufPos - ~startRecPos) % ~liveRecMaxLen;
+					~liveBuffersLengths[~destBuf] = len / ~sr;
+					"Recorded ".post;
+					~liveBuffersLengths[~destBuf].post;
+					"seconds to buffer ".post;
+					~liveBuffers[~destBuf][i].bufnum.postln;
+					~liveRecBuf[i].copyLoopTo(
+						buf: ~liveBuffers[~destBuf.asInteger][i],
+						dstStartAt: 0,
+						srcStartAt: ~startRecPos,
+						numSamples: len
+					);
+				}
+			);
+		});
+		"outside: ".post;
+		~liveBuffersLengths.postln;
+	}.inEnvir(BP(1)), "/tr", Server.default.addr);
+
+	~liveRecBuf = ~liveRecBufNumChan.collect({ |chan|
+		Buffer.alloc(
+			Server.default, ~liveRecMaxLen, 1
+		);
+	});
+	// ~buffers = ~audioFilePath.pathMatch.collect({ |path|
+	// 	~fileNames.add(path.basename);
+	// 	// On assume que ce sont des fichiers 2 canaux (pour l'instant).
+	// 	[
+	// 		Buffer.readChannel(Server.default, path, channels: [0]),
+	// 		Buffer.readChannel(Server.default, path, channels: [1])
+	// 	]
+	// });
+	~liveBuffers = ~numLiveRecBuf.collect({ |i|
+		~liveRecBufNumChan.collect({|chan|
+			Buffer.alloc(
+				Server.default, ~liveRecMaxLen, 1
+			);
+		});
+	});
+
+
+	// ~allBuffers = ~liveBuffers ++ ~buffers;
+	~allBuffers = ~liveBuffers;
+	~numBuffers = ~allBuffers.size;
+
+	
+	~prepList = ~prepList.deepCopy.addFunc({
+		{
+			SynthDef(\granulotron, {
+				arg out=0, gate=1, att=0.2, rel=0.01;
+				var trig;
+				trig = Impulse.ar(\freq.kr(110));
+				Out.ar(out,
+					TGrains.ar(
+						numChannels: 2,
+						trigger: trig,
+						bufnum: [\bufL.kr(0), \bufR.kr(1)],		// multichannel expansion!
+						rate: \rate.kr(1),
+						centerPos: \centerPos.kr(0.5),
+						dur: \granDur.kr(0.1),
+						pan: [-1,1] * \pan.kr(1),
+						amp: \amp.kr(0.1),
+						interp: 4
+					) * EnvGen.kr(Env.asr(att, 1, rel), gate, doneAction:2);
+				)
+			}).add;
+
+			~centerPosBus = Bus.control(s,1);
+			
+			~bus = Bus.audio(s, 2);
+			SynthDef(\record, {
+				arg in=0, buf=0, t_trig, id=0;
+				var phasor;
+				phasor = Phasor.ar(0, 1, 0, BufFrames.kr(buf));
+				BufWr.ar(
+					SoundIn.ar(in),
+					bufnum: buf,
+					phase: phasor
+				);
+				SendTrig.kr(t_trig, id, phasor);
+			}).add;
+			
+			SynthDef(\centerPosScaler, {
+				arg input=1.0, out=0, mul=1.0;
+				Out.kr(out, input * mul );
+			}).add;
+
+
+			Server.default.sync;
+			// Always recording, looping over ~liveRecMaxLen samples.
+			~recorder = ~liveRecBufNumChan.collect({ |i|
+				Synth.head(Server.default, \record, [
+					\buf, ~liveRecBuf[i],
+					\in, i,
+					\id, i
+				]);
+			});
+		}.fork;
+	});
+
+
+
+	~asPatternList = ~asPatternList.deepCopy.addFunc({
+		//Make sure everything is clean.
+		~granulotron.isPlaying.if({
+			~granulotron.free;
+			~pitcher.free;
+			~centerPosSynth.free;
+		});
+
+		~server.makeBundle(nil,{
+
+			~granulotron = Synth.after(~pitcher, \granulotron, [
+				// \out, ~bus.index,
+				\out, 0,
+				\bufL, ~allBuffers[~currentBuf][0],
+				\bufR, ~allBuffers[~currentBuf][1]
+				// \amp, 0.1
+			]);
+
+			~centerPosSynth = Synth.before(~granulotron, \centerPosScaler, [
+				\out, ~centerPosBus,
+				\mul, ~liveBuffersLengths[~currentBuf]
+			]);
+
+			~granulotron.map( \amp, ~ampBus);
+
+			~granulotron.map( \freq, ~freqBuses.subBus(0));
+			
+			// Map interpolator
+			[\rate, \granDur].do({|i,j|
+				~granulotron.map(i, ~interpolator.cursor.parameters[j+2].bus)
+			});
+
+			// centerPos: interpolator[1] -> centerPosSynth -> centerPosBus -> granulotron
+			~centerPosSynth.map(\input, ~interpolator.cursor.parameters[1].bus);
+			~granulotron.map(\centerPos, ~centerPosBus);
+
+			~pitcher.map( *
+				~notes.size.collect({|i|
+					[~interpolId + i , ~interpolator.cursor.parameters[0].bus]
+				}).flat;			
+			);
+			NodeWatcher.register(~granulotron);
+		});
+		1.asPattern;
+	});
+
+	~stopCleanupList = ~stopCleanupList.deepCopy.addFunc({
+		~granulotron.isPlaying.if({
+			~granulotron.release(~relTime);
+		});
+	});
+
+	~freeCleanupList = ~freeCleanupList.deepCopy.addFunc({
+		~bus.free;
+		~allBuffers.do({|i| i.do(_.free) });
+		~liveRecBuf.do(_.free);
+		~centerPosBuses.do(_.free);
+	});
+})

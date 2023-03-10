@@ -1,0 +1,277 @@
+// TEST
+x = {SinOsc.ar(([54,56,58,60]+12).midicps, 0, 0.1)}.play;
+x = {SinOsc.ar(([60]+12).midicps, 0, 0.1)}.play;
+x.free;
+x = {SinOsc.ar(Array.series(50, 60, 60).clump(2).flop;, 0, 0.1)}.play;
+x.free;
+s.meter;
+
+// Stop playback in harmo modes: does it work?
+// Make option to stop loops in the order they appeared.
+// Find a way to make inheritance.
+
+// Pops did not stop with sponge zebra.
+
+(
+{
+	~scJackName="SuperCollider:out_"; //for Jack connections
+	~scJackNameIn="SuperCollider:in_"; //for Jack connections
+	// ~scJackName="supernova:output_"; //for Jack connections
+	~reaperInJackName="REAPER:in";
+
+	// ~rppFilePath = "../signumMix/kamloopsMix.RPP".resolveRelative;
+	~rppFilePath = "../signumMix/kidsVivierMix.RPP".resolveRelative;
+
+	"killall reaper".unixCmd; //kill reaper.
+	// "nmcli con up sponger".unixCmd; // Make this computer a hotspot.
+	// "nmcli con up sudafed".unixCmd; // Connect to sudafed
+
+	// ~cond = Condition.new;
+	0.1.wait;
+	("reaper" + ~rppFilePath).unixCmd;
+	// "killall jconvolver;".unixCmd;
+	"killall zita-rev1;".unixCmd;
+	0.1.wait;
+	// "jconvolver -N rvb ~/docs/soundBank/ir/True\\ M7/Halls/amsterdamHall.conf".unixCmd;
+	"zita-rev1 -name rvb".unixCmd;
+	s.bootSync;
+	"/home/marierm/scripts/jackDisconnectEverything.py".unixCmd;
+	"prep/cSponge.scd".loadRelative;
+	"prep/cSimpleSponge.scd".loadRelative;
+	"prep/cLooper.scd".loadRelative;
+	"prep/cFm.scd".loadRelative;
+	// "prep/triggeredByVideo.scd".loadRelative;
+	"prep/cPopperRzn.scd".loadRelative;
+	"prep/cPopper.scd".loadRelative;
+	"prep/cPlayer.scd".loadRelative;
+	"prep/gui.scd".loadRelative;
+	
+	s.sync;
+	1.wait;
+	~ipsPrefix = "192.168.109.";
+	// ~ipsPrefix = "10.42.0.";
+	// ~ips = (14..18);
+	// ~ipsPrefix = "192.168.109.";
+	// ~ips = [191];
+	// ~ips = (97..98);
+	// ~ipsPrefix = "10.42.0.";
+	// ~ipsPrefix = "192.168.0."; // for sudafed
+	// ~ips = [123]; // ana
+	// ~ips = [190]; // brown
+	// ~ips = [140]; // flowers
+	// ~ips = [140, 191]; // stripes + zebra
+	// ~ips = [123, 141]; // ana + flowers
+	// ~ips = [123, 140, 141]; // ana + stripes + flowers
+	// ~ips = [140, 141, 123, 191]; // stripes + flowers + ana + zebra
+	// ~ips = [195,126,177,174];
+	// ~ips = [194,126,104,174];
+	// ~spongeNames = ["stripes", "flowers", "ana", "zebra"];
+	// ~ips = [103]; //, 111, 86, 109];
+	~ips = [103, 79, 111, 86, 109];
+	~spongeNames = ["stripes", "zebra", "flowers", "ana", "brown"];
+	~classes = [~cSponge, ~cSimpleSponge, ~cSimpleSponge, ~cSimpleSponge, ~cSimpleSponge];
+	// ~spongeNames = ["stripes", "flowers", "brown", "zebra"];
+	// ~classes = [~cSponge, ~cSimpleSponge, ~cSimpleSponge, ~cSimpleSponge];
+	~transpose = 0;
+	~sponges = IdentityDictionary.new();
+	~voices = IdentityDictionary.new();
+
+	~numDots = 32;  // For Pat's video.
+	~dotArrays = Array.fill2D(~ips.size, ~numDots, {0});
+	~patsAddress = NetAddr("224.0.0.1", 8888);
+	// x = ~cSponge.value( ~ipsPrefix ++ 97, \sponge, Server.default );
+	// x.prep;
+	// x.sponge.hold_(true);
+	~ips.do({ |i, j|
+		// var sym = ("sponge_" ++ i.asAscii).asSymbol;
+		var sym = (~spongeNames[j] ++ "_" ++ i).asSymbol;
+		~sponges.put( sym, ~classes[j].value( ~ipsPrefix ++ i, sym, Server.default ) );
+		~sponges[sym].prep; // The master is the first sponge: stripes
+		s.sync;
+		1.wait;
+		~sponges[sym].sponge.hold_(true);
+		~voices.put( sym, List[] );
+		~voices[sym].add( // add fm synth to voice 0 of each sponge.
+			~cFmManager.value(
+				interpolatorPath: ("fm0*").resolveRelative.pathMatch.sort.last.resolveRelative,
+				cSponge: ~sponges[sym],
+				notes: ([ \en1, \en2, \en3].keynum.mirror2.clump(3)).flat + (0 * 12) + ~transpose,
+				chords: [
+					[ \en1, \en2, \en3, \en3, \en2, \en1].keynum + ~transpose,
+					// [ \fs7, \bn7, \en8, \en7, \bf7, \cn8].keynum - 12,
+					[ \en1, \en2, \gn2, \dn3, \fs3, \bn3].keynum + ~transpose,
+					[ \en1, \dn2, \fs2, \dn3, \fs3, \bn3].keynum + ~transpose,
+					[ \en1, \cn2, \gn2, \dn3, \fs3, \bn3].keynum + ~transpose,
+					[ \en1, \bn1, \an2, \dn3, \fs3, \bn3].keynum + ~transpose,
+					[ \en1, \en2, \cn3, \dn3, \fs3, \bn3].keynum + ~transpose,
+					[ \en1, \dn2, \gn2, \cn3, \fs3, \bn3].keynum + ~transpose,
+					[ \en1, \cn2, \gn2, \bn2, \fs3, \bn3].keynum + ~transpose,
+					[ \en1, \dn2, \fs2, \bn2, \en3, \an3].keynum + ~transpose,
+					[ \bn0, \en2, \cn2, \dn3, \gn1, \fn2, \an2 ].keynum,
+					[ \an1, \dn2, \en3, \gn2, \bn2, \cn3, \fn1 ].keynum,
+					[ \en1, \dn1, \fn2, \cn2, \bn1, \gn3, \an2 ].keynum,
+					[ \en1, \an2, \gn2, \dn3, \cn1, \fn2, \bn1 ].keynum,
+					[ \cn1, \bn2, \an3, \fn1, \en1, \gn3, \dn2 ].keynum,
+					[ \dn1, \fn2, \cn3, \an3, \gn2, \bn1, \en1 ].keynum,
+					[ \cn1, \en3, \fn2, \an1, \bn1, \gn2, \dn3 ].keynum,
+					[ \bn0, \dn3, \an1, \cn2, \gn3, \fn1, \en3 ].keynum,
+					[ \fs1, \bn1, \en2, \en1, \bf1, \cn2].keynum + ~transpose,
+					[ \fn1, \bf1, \ef2, \en1, \bf1, \cn2].keynum + ~transpose,
+					[ \en1, \an1, \cs2, \ef1, \af1, \dn2].keynum + ~transpose,
+					[ \gf1, \an1, \cn2, \fn1, \af1, \df2].keynum + ~transpose,
+					[ \gf1, \an1, \cn2, \fn1, \bf1, \dn2].keynum + ~transpose,
+					[ \gf1, \an1, \cn2, \fn1, \bn1, \dn2].keynum + ~transpose,
+					[ \gn1, \an1, \cn2, \fn1, \bn1, \dn2].keynum + ~transpose,
+					[ \gn1, \an1, \cn2, \fn1, \fn2, \dn2].keynum + ~transpose
+				],
+				outBus: j * 2,
+				fsrMuteThreshold: 0.85, // larger number = muting is easier
+				fmId: j + 20,
+				relTime: 0.2,
+				server: s,
+				withLoop: (~classes[j] == ~cSponge )
+			)
+		);
+		
+		///////////////
+		s.sync;
+		1.wait;
+		~voices.at(sym).do({|i| i.prep});
+		s.sync;
+		1.wait;
+		////////////////////  To send controls to Pat's videos.
+		// ~sponges.at(sym).sponge.action_(
+		// 	~sponges.at(sym).sponge.action.addFunc({ |msg|
+		// 		var val;
+		// 		val = msg[0].linlin(0,1023,-1.0,1.0);
+		// 		~dotArrays[j] = ~dotArrays[j].rotate(-1);
+		// 		~dotArrays[j].put(~numDots - 1, val);
+		// 		~dotArrays[j].do({ |value, index|
+		// 			~patsAddress.sendMsg("/video_wave" +/+ ~spongeNames[j], index, value);
+		// 			~patsAddress.sendMsg("/video_wave_c" +/+ ~spongeNames[j], index, value);
+		// 		});
+		// 	});
+		// );
+		// sym.post; " ready.".postln;
+	});
+	// s.sync;
+	// { // add voices to first sponge only.
+	// 	var sym = (~spongeNames[0] ++ "_" ++ ~ips[0]).asSymbol;
+	// 	sym.postln;
+	// 	~voices[sym].add( // add melo synth to voice 1 of first sponge only.
+	// 		~cPopperRzn.value(
+	// 			interpolatorPath: ("popMelo"++1++"*").resolveRelative.pathMatch.sort.last.resolveRelative,
+	// 			cSponge: ~sponges[sym],
+	// 			notes: [ \en1, \en2, \en3, \en3, \en2, \en1].keynum + 24 + ~transpose,
+	// 			chords: [
+	// 				[ \en1, \en2, \en3, \en3, \en2, \en1].keynum + ~transpose,
+	// 				// [ \fs7, \bn7, \en8, \en7, \bf7, \cn8].keynum - 12,
+	// 				[ \en2, \en3, \gn3, \dn4, \fs4, \bn4].keynum + ~transpose,
+	// 				[ \en2, \dn3, \fs3, \dn4, \fs4, \bn4].keynum + ~transpose,
+	// 				[ \en2, \cn3, \gn3, \dn4, \fs4, \bn4].keynum + ~transpose,
+	// 				[ \en2, \bn2, \an3, \dn4, \fs4, \bn4].keynum + ~transpose,
+	// 				[ \en2, \en3, \cn4, \dn4, \fs4, \bn4].keynum + ~transpose,
+	// 				[ \en2, \dn3, \gn3, \cn4, \fs4, \bn4].keynum + ~transpose,
+	// 				[ \en2, \cn3, \gn3, \bn3, \fs4, \bn4].keynum + ~transpose,
+	// 				[ \en2, \dn3, \fs3, \bn3, \en4, \an4].keynum + ~transpose,
+	// 				[ \fs2, \bn2, \en3, \en2, \bf2, \cn3].keynum + ~transpose,
+	// 				[ \fn2, \bf2, \ef3, \en2, \bf2, \cn3].keynum + ~transpose,
+	// 				[ \en2, \an2, \cs3, \ef2, \af2, \dn3].keynum + ~transpose,
+	// 				[ \gf2, \an2, \cn3, \fn2, \af2, \df3].keynum + ~transpose,
+	// 				[ \gf2, \an2, \cn3, \fn2, \bf2, \dn3].keynum + ~transpose,
+	// 				[ \gf2, \an2, \cn3, \fn2, \bn2, \dn3].keynum + ~transpose,
+	// 				[ \gn2, \an2, \cn3, \fn2, \bn2, \dn3].keynum + ~transpose,
+	// 				[ \gn2, \an2, \cn3, \fn2, \fn3, \dn3].keynum + ~transpose
+	// 			],
+	// 			outBus: 4,
+	// 			tetra: false,
+	// 			fsrMuteThreshold: nil,
+	// 			rznId: 210,
+	// 			relTime: 10.0,
+	// 			server: s
+	// 		)
+	// 	);
+	// 	~voices[sym].add( // add melo synth to voice 1 of each sponge.
+	// 		~cPopper.value(
+	// 			interpolatorPath: ("popMelo"++1++"*").resolveRelative.pathMatch.sort.last.resolveRelative,
+	// 			cSponge: ~sponges[sym],
+	// 			notes: [ \en1 ],
+	// 			outBus: 4,
+	// 			tetra: false,
+	// 			amp: 4.dbamp,
+	// 			fsrMuteThreshold: nil,
+	// 			popId: 550,
+	// 			server: s
+	// 		)
+	// 	);
+	// 	~voices[sym].add( // add flm playback for each sponge.
+	// 		~cPlayer.value(
+	// 			audioFilePath: "samples/01-flm.wav".resolveRelative,
+	// 			cSponge: ~sponges[sym],
+	// 			outBus: 6,
+	// 			tetra: false,
+	// 			amp: 0.dbamp,
+	// 			attackTime: 5,
+	// 			relTime: 1,
+	// 			ampCtl: true,
+	// 			playerId: 880,
+	// 			server: s
+	// 		)
+	// 	);
+	// 	~voices[sym].add( // add feu playback for each sponge.
+	// 		~cPlayer.value(
+	// 			audioFilePath: "samples/05-feu.wav".resolveRelative,
+	// 			cSponge: ~sponges[sym],
+	// 			outBus: 8,
+	// 			tetra: false,
+	// 			amp: 0.dbamp,
+	// 			attackTime: 15,
+	// 			relTime: 12,
+	// 			ampCtl: false,
+	// 			playerId: 1430,
+	// 			server: s
+	// 		)
+	// 	);
+	// 	~voices.at(sym).do({|i| i.prep});
+	// }.valueEnvir;
+	
+	// Make Jack connections.
+	10.do({ |i|
+		var string;
+		string = "jack_connect" + ~scJackName ++ (i+1) + ~reaperInJackName ++ (i+1);
+		string.unixCmd;
+	});
+
+	"jack_connect REAPER:out1 system:playback_1
+     jack_connect REAPER:out2 system:playback_2
+     jack_connect REAPER:out3 system:playback_3
+     jack_connect REAPER:out4 system:playback_4
+     jack_connect REAPER:out5 system:playback_5
+     jack_connect REAPER:out6 system:playback_6".unixCmd;
+	
+	"jack_connect REAPER:out7 rvb:in.L
+     jack_connect REAPER:out8 rvb:in.R
+     jack_connect rvb:out.L REAPER:in31
+     jack_connect rvb:out.R REAPER:in32".unixCmd;
+
+	2.do({ |i|
+		var string =
+		"jack_connect system:capture_" ++ (i+1) + ~scJackNameIn ++ (i+1);
+		string.unixCmd;
+	});
+
+	~ips.do({ |i,j|
+		var sym = (~spongeNames[j] ++ "_" ++ i).asSymbol;
+		~sponges[sym].sponge.hold_(false);
+	});
+	{
+		~gui = ~quintetGui.value(~ips, ~spongeNames);
+		~gui.window.front;
+	}.defer;
+}.fork;
+)
+
+~sponges[\stripes_140].sponge.features[0].gui;
+~voices[\stripes_140][0].interpolator.gui;
+
+~voices.at(~stripes)[fmVoice].octVa;
