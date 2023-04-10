@@ -1,4 +1,3 @@
-
 // TEST
 x = {SinOsc.ar(([54,56,58,60]+12).midicps, 0, 0.1)}.play;
 x = {SinOsc.ar(([60]+12).midicps, 0, 0.1)}.play;
@@ -20,10 +19,11 @@ s.meter;
 (
 {
     ~stageCtl = NetAddr("localhost", 56666);
-    ~stageCtlPath = "C:/Users/User/bin/open-stage-control/";
-    (~stageCtlPath ++ "open-stage-control.exe -- --port 8000 --send localhost:57120 --osc-port 56666 --load " ++ "stageDisplay5.json".resolveRelative).unixCmd;
+	~stageCtlFile = "stageDisplay.json".resolveRelative;
+	("open -a open-stage-control --args --port 8000 --send localhost:57120 --osc-port 56666 --load" + ~stageCtlFile).unixCmd;
 
-    ("reaper " ++ "../scRouting/scRouting.rpp".resolveRelative).unixCmd;
+	("open -a reaper" + "./scRouting/scRouting.rpp".resolveRelative).unixCmd;
+
 
 	TempoClock.default.tempo_((64.midicps) / 2.pow(7)); // tempo of midinote 64 = 1.2876076441909 bps
 
