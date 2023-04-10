@@ -100,13 +100,12 @@ OSCdef.new(\suiveur_to_color, { arg msg;
 		id,
 		freq.linlin(
 			0, 2000, ~h_start, ~h_end
-		).asInt,
+		).asInteger
 		entropy.linlin(
 			0, 35, ~s_start, ~s_end
-		).asInt,
+		).asInteger
 		amp.linlin(
 			0, 0.1, ~b_start, ~b_end
-		).asInt
-	);
+		).asInteger	);
 }, '/analysis',  recvPort: 57120);
 )
