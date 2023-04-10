@@ -1,6 +1,6 @@
 {
   "createdWith": "Open Stage Control",
-  "version": "1.9.12",
+  "version": "1.22.0",
   "type": "session",
   "content": {
     "type": "root",
@@ -36,7 +36,6 @@
     "target": "",
     "ignoreDefaults": false,
     "bypass": false,
-    "script": "",
     "widgets": [
       {
         "type": "panel",
@@ -80,7 +79,6 @@
         "target": "",
         "ignoreDefaults": false,
         "bypass": false,
-        "script": "",
         "widgets": [
           {
             "type": "panel",
@@ -124,7 +122,6 @@
             "target": "",
             "ignoreDefaults": false,
             "bypass": false,
-            "script": "",
             "widgets": [
               {
                 "type": "text",
@@ -157,7 +154,10 @@
                 "preArgs": "",
                 "decimals": 2,
                 "target": "",
-                "script": ""
+                "onValue": "",
+                "lock": false,
+                "borderRadius": "auto",
+                "onCreate": ""
               },
               {
                 "type": "text",
@@ -186,11 +186,14 @@
                 "value": 1,
                 "default": 1,
                 "linkId": "",
-                "address": "/rubik_103",
+                "address": "/rubik_107",
                 "preArgs": "",
                 "decimals": 2,
                 "target": "",
-                "script": ""
+                "onValue": "",
+                "lock": false,
+                "borderRadius": "auto",
+                "onCreate": ""
               },
               {
                 "type": "matrix",
@@ -236,19 +239,26 @@
                 "value": 0,
                 "default": 0,
                 "linkId": "",
-                "address": "/rubik_103/looper",
+                "address": "/rubik_107/looper",
                 "preArgs": "",
                 "typeTags": "",
                 "decimals": 2,
                 "target": "",
                 "ignoreDefaults": false,
                 "bypass": false,
-                "script": "",
                 "widgets": [],
-                "tabs": []
+                "tabs": [],
+                "onValue": "",
+                "lock": false,
+                "borderRadius": "auto",
+                "onCreate": ""
               }
             ],
-            "tabs": []
+            "tabs": [],
+            "onValue": "",
+            "lock": false,
+            "borderRadius": "auto",
+            "onCreate": ""
           },
           {
             "type": "panel",
@@ -292,7 +302,6 @@
             "target": "",
             "ignoreDefaults": false,
             "bypass": false,
-            "script": "",
             "widgets": [
               {
                 "type": "text",
@@ -325,7 +334,10 @@
                 "preArgs": "",
                 "decimals": 2,
                 "target": "",
-                "script": ""
+                "onValue": "",
+                "lock": false,
+                "borderRadius": "auto",
+                "onCreate": ""
               },
               {
                 "type": "text",
@@ -354,11 +366,14 @@
                 "value": 1,
                 "default": 1,
                 "linkId": "",
-                "address": "/zebra_79",
+                "address": "/zebra_108",
                 "preArgs": "",
                 "decimals": 2,
                 "target": "",
-                "script": ""
+                "onValue": "",
+                "lock": false,
+                "borderRadius": "auto",
+                "onCreate": ""
               },
               {
                 "type": "matrix",
@@ -404,24 +419,40 @@
                 "value": 0,
                 "default": 0,
                 "linkId": "",
-                "address": "/zebra_79/looper",
+                "address": "/zebra_108/looper",
                 "preArgs": "",
                 "typeTags": "",
                 "decimals": 2,
                 "target": "",
                 "ignoreDefaults": false,
                 "bypass": false,
-                "script": "",
                 "widgets": [],
-                "tabs": []
+                "tabs": [],
+                "onValue": "",
+                "lock": false,
+                "borderRadius": "auto",
+                "onCreate": ""
               }
             ],
-            "tabs": []
+            "tabs": [],
+            "onValue": "",
+            "lock": false,
+            "borderRadius": "auto",
+            "onCreate": ""
           }
         ],
-        "tabs": []
+        "tabs": [],
+        "onValue": "",
+        "lock": false,
+        "borderRadius": "auto",
+        "onCreate": ""
       }
     ],
-    "tabs": []
+    "tabs": [],
+    "onValue": "",
+    "lock": false,
+    "borderRadius": "auto",
+    "hideMenu": false,
+    "onCreate": ""
   }
 }
