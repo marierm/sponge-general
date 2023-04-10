@@ -5,7 +5,8 @@
 	var oscFuncs;
 	var spongeNames;
 	spongeNames = names.collect({ |i,j|
-		(i ++ "_" ++ ips[j]);
+		// (i ++ "_" ++ ips[j]);
+		i;
 	});
 
 	octaveViews = ips.collect({|i,j|

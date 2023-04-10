@@ -63,7 +63,7 @@ s.meter;
     // ~dotArrays = Array.fill2D(~ips.size, ~numDots, {0});
     // ~patsAddress = NetAddr("224.0.0.1", 8888);
 	~ips.do({ |i, j|
-		var sym = (~spongeNames[j] ++ "_" ++ i).asSymbol;
+		var sym = (~spongeNames[j]).asSymbol;
 		~sponges.put( sym, ~classes[j].value( ~ipsPrefix ++ i, sym, Server.default ) );
 		~sponges[sym].prep; // The main is the first sponge: stripes
 		s.sync;
@@ -213,7 +213,7 @@ s.meter;
 
 
 	~ips.do({ |i,j|
-		var sym = (~spongeNames[j] ++ "_" ++ i).asSymbol;
+		var sym = (~spongeNames[j]).asSymbol;
 		~sponges[sym].sponge.hold_(false);
 	});
 }.fork;
