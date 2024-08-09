@@ -33,5 +33,17 @@ Server.default.options.numWireBufs_(2.pow(16));
 Server.default.options.loadDefs_(false);
 MIDIClient.init;
 MIDIIn.connectAll;
-Server.default.boot;
+Server.default.waitForBoot({
+})
+)
+
+
+(
+SynthDef(\keys, {
+	arg out=0, freq=440, amp=0.1, fwiz=1.0, gate=1.0;
+	arg sig, envA;
+	envA = EnvGen.kr(Env.adsr)
+	sig = FM7.ar()
+	Out.ar(out, sig);
+})
 )
