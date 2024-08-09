@@ -45,7 +45,7 @@ s.meter;
 	// ~ipsPrefix = "10.42.0.";
     // ~spongeNames = ["stripes", "zebra", "flowers", "ana", "browne"];
     // ~ips = [107, 108, 109, 103, 113];
-    ~ips = [107, 108];
+    ~ips = [114, 109];
 	// ~ips = [140];
 	// ~ips = [140, 191];
     // ~ips = [62];
